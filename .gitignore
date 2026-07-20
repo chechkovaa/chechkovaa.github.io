@@ -1,0 +1,6 @@
+# Local experiments and old drafts — not part of the shipped site
+_archive/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
