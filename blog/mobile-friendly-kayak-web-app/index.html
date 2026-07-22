@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>Building a mobile-friendly web app in 20 hours — Anastasia Chechkova</title>
+  <meta name="description" content="How I replaced a chaotic spreadsheet with an app 170 kayakers use every week — Apps Script, Claude Code, and why the research mattered more than the stack." />
+  <meta name="author" content="Anastasia Chechkova" />
+  <meta property="og:title" content="Building a mobile-friendly web app in 20 hours" />
+  <meta property="og:description" content="How I replaced a chaotic spreadsheet with an app 170 kayakers use every week — and why the research mattered more than the stack." />
+  <meta property="og:type" content="article" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000000'/%3E%3Ctext x='16' y='22' font-family='-apple-system,system-ui,sans-serif' font-size='18' font-weight='600' fill='%230a84ff' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script async src="https://tally.so/widgets/embed.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="brand">Anastasia Chechkova</a>
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navMenu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-menu" id="navMenu">
+    <!-- <a href="/projects/">Projects</a> -->
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/about/">About</a>
+    <a href="https://www.linkedin.com/in/anastasia-chechkova/" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="#" data-tally-open="zxRKqR" data-tally-layout="modal" data-tally-width="572" data-tally-hide-title="1" data-tally-emoji-text="👋" data-tally-emoji-animation="wave" data-tally-auto-close="2000">Contact Me</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="page-head post-head reveal">
+      <a href="/blog/" class="back-link">← Blog</a>
+      <h1>Building a mobile-friendly web app in 20 hours (Apps Script + Claude Code)</h1>
+    </header>
+
+    <div class="post-body">
+    <aside class="toc reveal">
+      <p class="toc-title">On this page</p>
+      <nav>
+        <a href="#spreadsheet">In the beginning was the Spreadsheet</a>
+        <a href="#audience">Know your audience</a>
+        <a href="#building">Building a web app</a>
+        <a href="#demo">The demo</a>
+        <a href="#takeaway">The takeaway</a>
+      </nav>
+    </aside>
+
+    <article class="prose reveal">
+      <p>I love building things. But only if they bring value.</p>
+
+      <p>So when vibe coding suddenly became popular, I really wanted to jump on this bandwagon, but in a way that made sense to me.</p>
+
+      <p>Soon, I saw an opportunity: using Claude Code, I built a mobile-friendly web app for my local kayak club that replaced an old spreadsheet. Instead of building something for personal use, I created an app that is used by 170 kayakers every week.</p>
+
+      <h2 id="spreadsheet">In the beginning was the Spreadsheet</h2>
+
+      <p>Spreadsheets are universally loved by organizations and people. Versatile, accessible, and affordable. What's not to like here?</p>
+
+      <p>But they are also quite difficult to manage. Too many cooks spoil the broth. The same happens with spreadsheets. Once more than one person is editing it, everyone gets an opinion on the color scheme, column names, formatting, and more.</p>
+
+      <p>In other words, multiple users in one spreadsheet create chaos and multiply it.</p>
+
+      <p>That's exactly what was happening in the kayak club.</p>
+
+      <figure class="sheet-embed reveal">
+        <div class="sheet-frame">
+          <img src="/assets/old-gkc-spreadsheet.svg" alt="A chaotic weekly kayak sign-up spreadsheet: overwritten names, highlighted cells, a missing entry, a duplicate row, inconsistent boat types, and duplicated sheet tabs at the bottom." />
+        </div>
+        <figcaption>A typical weekly spreadsheet (fictional data).</figcaption>
+      </figure>
+
+      <p>Every Sunday evening, a Committee member was setting up a new sheet on Google Sheets with events for the following week. People were waiting for it, rushing to sign up, overwriting each other's names, moving cells around, and accidentally creating copies of tabs. This wasn't a nice experience for anyone.</p>
+
+      <p>"It can be done better", I thought. But I was biased. I got my degree in corporate finance and I love spreadsheets. So my first thought was to look into macros or custom add-ons. In reality, the spreadsheet was already bursting at the seams. I was trying to optimize for chaos.</p>
+
+      <p>That's where I took a pause. Instead of jumping straight into building, I started asking questions.</p>
+
+      <h2 id="audience">Know your audience</h2>
+
+      <p>I wanted to understand the problem deeply, both for club members and the Committee. So I decided to talk to people and find out about their experience with the Spreadsheet, frustrations, points of friction, and preferences.</p>
+
+      <p>That's what marketers do: they talk to users. Audience research is an important step but it rarely gets any spotlight in vibe coding because most examples include apps for personal use. And if it's personal use, audience research is just self-reflection and journaling.</p>
+
+      <p>In the case of the kayak club, talking to different people revealed interesting insights that I wasn't aware of. It wasn't just about breaking formulas or overwriting data. Two groups, two very different problems:</p>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <span class="who">The Committee</span>
+          <p>The biggest obstacle was the time it took to set up new sheets, archive old ones, and maintain them.</p>
+        </div>
+        <div class="problem-card">
+          <span class="who">Club members</span>
+          <p>Using Google Sheets on the go, from a phone, wasn't a nice experience. Google Sheets wasn't designed for mobile.</p>
+        </div>
+      </div>
+
+      <p>Without this research, I would have identified the wrong problem. Building macros or add-ons, as I initially planned, wasn't the right thing to do. It wouldn't have saved anyone's time or minimized the maintenance complexity.</p>
+
+      <p>My ambitious goal was to build a standalone app. I started reading about React, Postgres, Supabase, and Vercel. AI made it simple to build apps, so I got carried away quickly. But the more I read, the less convinced I became. Was it really necessary? Was it solving the problem?</p>
+
+      <p>On one hand, with great power comes great responsibility. On the other, you'd want a bit of wisdom in the mix too. And every power has its limits. A local sports club has a volunteer-based Committee. It needs a simple, low-cost, low-maintenance solution that can serve the ever-changing Committee that rarely has the same people every single year.</p>
+
+      <p>I was very tempted to chase a shinier stack. But this would have gone against what I learned as a product marketer: meet your audience where they are.</p>
+
+      <p>The club ran its day-to-day activities on Google infrastructure. The website was on Google Sites, the newsletter went out through Google Contacts, and email ran on Gmail. The stack decision was obvious: the whole thing can run on <strong>Google Apps Script</strong>, with a <strong>Google Sheet as the database</strong>.</p>
+
+      <ul>
+        <li>The sheet holds events, boats, sign-ups, config — everything</li>
+        <li>Apps Script serves the mobile web app and handles all writes</li>
+        <li>The committee admins the whole thing by editing the sheet, a tool they already know</li>
+        <li>Google handles hosting, identity, HTTPS, uptime, rate limiting, and every other boring-but-essential thing for free</li>
+      </ul>
+
+      <h2 id="building">Building a web app</h2>
+
+      <p>Building something from scratch means first getting clear on what exactly you're trying to achieve.</p>
+
+      <p>So I asked Claude to rigorously interview me to get to know the club processes, the edge cases, boat availability, and many other things an outsider would never know.</p>
+
+      <p>All of this went into the project scope. It covered:</p>
+
+      <ul>
+        <li>Who the product is for (members and committee, with their different needs and problems)</li>
+        <li>Who it's <strong>not</strong> for (not the general public, not paying customers, not a platform for other clubs)</li>
+        <li>The exact week-by-week behavior I wanted (specific to our club)</li>
+        <li>Separate logic for separate kayaking disciplines, waitlists, cancellations, headcount caps, and more</li>
+        <li>A list of everything I was explicitly <strong>not</strong> building in v1</li>
+      </ul>
+
+      <p>That last section is the one I'm very proud of. Scope creep has always been a problem in project management, but it's getting a new life in the AI era. When everything seems possible, it's not about "Can we build it?" but "Should we?"</p>
+
+      <p>Every "no" made the v1 sharper. But more importantly, it made the app click for users. That was positioning.</p>
+
+      <p>The fancy version of this app — React, Vercel, Supabase, custom admin — would have cost more, taken longer, and still not solved the immediate problem. The Club didn't need a mobile app. It needed a way to manage weekly sign-ups better.</p>
+
+      <figure class="demo-embed reveal" id="demo">
+        <div class="demo-phone">
+          <iframe src="https://chechkova.com/gkc-demo/" title="Events Sign-Up App — live demo" loading="lazy"></iframe>
+        </div>
+        <figcaption>The demo app: <a href="https://chechkova.com/gkc-demo/" target="_blank" rel="noopener">Open in a new tab</a>.</figcaption>
+      </figure>
+
+      <p>For coding, I worked with <strong>Claude Code</strong> in the terminal:</p>
+
+      <ul>
+        <li>Mobile-first card UI, Apple HIG–style</li>
+        <li>Sign up / cancel / waitlist / auto-promote functionality</li>
+        <li>324 unit test cases, organized into 41 sections</li>
+      </ul>
+
+      <p>The full stack included:</p>
+
+      <ul>
+        <li><strong>Google Apps Script</strong> for backend and serving the web app</li>
+        <li><strong>Google Sheets</strong> as the database <em>and</em> the admin interface</li>
+        <li><strong>HTML + vanilla JS + CSS</strong> for the frontend</li>
+        <li><strong>Claude Code</strong> as the main coding tool</li>
+        <li><strong>Node.js</strong> for the unit test harness on the pure-logic layer</li>
+        <li><strong>GitHub</strong> for version control</li>
+      </ul>
+
+      <h2 id="takeaway">The takeaway</h2>
+
+      <p>When we talk about vibe coding, we often talk about speed.</p>
+
+      <p>AI made building more accessible and faster. That shifted all the leverage to the one thing: figuring out exactly what to build, for exactly whom, with exactly which edges, in exactly which order.</p>
+
+      <p>My work on this web app is not finished. I have bigger plans. But I'll make sure that whatever it is I'm building, it's providing real value to end users.</p>
+
+      <div class="note"><p>Want the technical side? Read <a href="/blog/cache-invalidation-apps-script/">how I handled caching and cache invalidation</a> in this app.</p></div>
+    </article>
+    </div>
+  </main>
+
+  <footer>© 2026 Anastasia Chechkova</footer>
+  <script src="/scripts.js"></script>
+</body>
+</html>

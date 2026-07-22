@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>Cache invalidation in a Google Apps Script web app — Anastasia Chechkova</title>
+  <meta name="description" content="Caching made my kayak-club app fast — then it started serving stale data. How per-sheet onEdit triggers fixed cache invalidation in Google Apps Script." />
+  <meta name="author" content="Anastasia Chechkova" />
+  <meta property="og:title" content="Cache invalidation in a Google Apps Script web app" />
+  <meta property="og:description" content="Caching made my kayak-club app fast — then it started serving stale data. How per-sheet onEdit triggers fixed it." />
+  <meta property="og:type" content="article" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23000000'/%3E%3Ctext x='16' y='22' font-family='-apple-system,system-ui,sans-serif' font-size='18' font-weight='600' fill='%230a84ff' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script async src="https://tally.so/widgets/embed.js"></script>
+</head>
+<body>
+  <nav class="nav">
+    <a href="/" class="brand">Anastasia Chechkova</a>
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navMenu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-menu" id="navMenu">
+    <!-- <a href="/projects/">Projects</a> -->
+    <a href="/blog/" class="active">Blog</a>
+    <a href="/about/">About</a>
+    <a href="https://www.linkedin.com/in/anastasia-chechkova/" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="#" data-tally-open="zxRKqR" data-tally-layout="modal" data-tally-width="572" data-tally-hide-title="1" data-tally-emoji-text="👋" data-tally-emoji-animation="wave" data-tally-auto-close="2000">Contact Me</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="page-head post-head reveal">
+      <a href="/blog/" class="back-link">← Blog</a>
+      <h1>Implementing cache invalidation in a Google Apps Script web app</h1>
+    </header>
+
+    <div class="post-body">
+    <aside class="toc reveal">
+      <p class="toc-title">On this page</p>
+      <nav>
+        <a href="#setup">The setup</a>
+        <a href="#problem">The problem: cache and cache invalidation</a>
+        <a href="#fix">The fix</a>
+        <a href="#tactic">The invalidation tactic</a>
+      </nav>
+    </aside>
+
+    <article class="prose reveal">
+      <p>There's an old joke in software development that says that there are only two hard problems: cache invalidation and naming.</p>
+
+      <p>Recently, when building an app on Google Apps Script, I walked straight into it.</p>
+
+      <div class="note"><p>I didn't write the code. I directed it with Claude Code. I'm not a software developer, I'm more of a software director. Instead of guiding the film crew, I guide AI agents.</p></div>
+
+      <h2 id="setup">The setup</h2>
+
+      <p>I built a web app for a local kayak club that members can use to sign up to weekly events.</p>
+
+      <p>The app runs on Google Apps Script with a Google Sheet as the database, which consists of several sheets.</p>
+
+      <p>Only one of them is the actual sign-up list. The other sheets have config data:</p>
+
+      <ul>
+        <li>the boat fleet (a list of all available and broken kayaks),</li>
+        <li>the season dates (summer vs. winter schedule),</li>
+        <li>special events (outside of the regular schedule),</li>
+        <li>canceled events.</li>
+      </ul>
+
+      <p>Every time a member opens the app, the server needs all of this data to work out what's going on this week.</p>
+
+      <p>Otherwise, the weekly schedule wouldn't show the accurate events.</p>
+
+      <h2 id="problem">The problem: cache and cache invalidation</h2>
+
+      <p>I'm not a developer (some people would call me a vibe coder). So when I built the first version of the web app, I noticed that it was very accurate and... very slow.</p>
+
+      <p>Reading several sheets through Apps Script's built-in <code>SpreadsheetApp</code> service on every single page load wasn't an example of great implementation. Every <code>getDataRange().getValues()</code> is a round-trip to Google's backend. So with a few sheets holding data, these round-trips quickly added up.</p>
+
+      <p>So I decided to cache them using the Apps Script built-in <code>CacheService</code> and storing each sheet as JSON for six hours (the maximum time-to-live allowed):</p>
+
+      <pre><code><span class="tok-k">function</span> <span class="tok-f">cacheWrapRead</span>(key, fetcher) {
+  <span class="tok-k">var</span> cache = <span class="tok-b">CacheService</span>.<span class="tok-f">getScriptCache</span>();
+  <span class="tok-k">var</span> stored = cache.<span class="tok-f">get</span>(<span class="tok-n">CACHE_PREFIX</span> + key);
+  <span class="tok-k">if</span> (stored) {
+    <span class="tok-k">try</span> {
+      <span class="tok-k">return</span> <span class="tok-b">JSON</span>.<span class="tok-f">parse</span>(stored);
+    } <span class="tok-k">catch</span> (e) {
+      <span class="tok-c">// fall through and re-fetch</span>
+    }
+  }
+  <span class="tok-k">var</span> fresh = <span class="tok-f">fetcher</span>();
+  <span class="tok-k">try</span> {
+    cache.<span class="tok-f">put</span>(<span class="tok-n">CACHE_PREFIX</span> + key, <span class="tok-b">JSON</span>.<span class="tok-f">stringify</span>(fresh), <span class="tok-n">CACHE_TTL_SECONDS</span>);
+  } <span class="tok-k">catch</span> (e) {
+    <span class="tok-c">// Cache write can fail if the payload is too large — ignore, read uncached</span>
+  }
+  <span class="tok-k">return</span> fresh;
+}</code></pre>
+
+      <p>Page loads got noticeably faster.</p>
+
+      <p>Caching seemed like the right answer to the page load problem. But this simple web app has real users, and this meant: things didn't always go as planned.</p>
+
+      <p>Sometimes a committee member needed to change a headcount cap, cancel an event, mark a boat as broken... In these cases, caching produced stale copies of data.</p>
+
+      <p>That's where I learned first-hand about the importance of cache invalidation. I might never have run into this question if I'd just vibe coded an app for personal use.</p>
+
+      <h2 id="fix">The fix</h2>
+
+      <p>Apps Script has a <a href="https://developers.google.com/apps-script/guides/triggers" target="_blank" rel="noopener">simple trigger</a> called <code>onEdit</code>.</p>
+
+      <p>It fires whenever someone edits a cell in Google Sheets, which can have different tabs.</p>
+
+      <p>Each tab maps to one cache key:</p>
+
+      <pre><code><span class="tok-k">var</span> <span class="tok-n">SHEET_TO_CACHE_KEY</span> = {
+  <span class="tok-s">'Boats'</span>: <span class="tok-s">'boats'</span>,
+  <span class="tok-s">'Schedule'</span>: <span class="tok-s">'schedule'</span>,
+  <span class="tok-s">'Config'</span>: <span class="tok-s">'config'</span>,
+  <span class="tok-s">'Special Events'</span>: <span class="tok-s">'specialEvents'</span>,
+  <span class="tok-s">'Cancelled Dates'</span>: <span class="tok-s">'cancelledDates'</span>,
+};</code></pre>
+
+      <p>So when a committee member edits a cell in a tab, the trigger drops the cache entry for <em>that specific tab</em>:</p>
+
+      <pre><code><span class="tok-k">function</span> <span class="tok-f">onEdit</span>(e) {
+  <span class="tok-k">if</span> (!e || !e.range) <span class="tok-k">return</span>;
+  <span class="tok-k">try</span> {
+    <span class="tok-k">var</span> sheetName = e.range.<span class="tok-f">getSheet</span>().<span class="tok-f">getName</span>();
+    <span class="tok-k">var</span> cacheKey = <span class="tok-n">SHEET_TO_CACHE_KEY</span>[sheetName];
+    <span class="tok-k">if</span> (cacheKey) {
+      <span class="tok-b">CacheService</span>.<span class="tok-f">getScriptCache</span>().<span class="tok-f">remove</span>(<span class="tok-n">CACHE_PREFIX</span> + cacheKey);
+    }
+    <span class="tok-c">// (edits to a cap column also trigger a re-shuffle of sign-ups — omitted here)</span>
+  } <span class="tok-k">catch</span> (err) {
+    <span class="tok-c">// Never let a trigger failure block the edit from completing</span>
+  }
+}</code></pre>
+
+      <p>Every other unedited sheet with config data still loads a cached version.</p>
+
+      <h2 id="tactic">The invalidation tactic</h2>
+
+      <p>Here's the detail that makes this cache invalidation smooth: <strong>simple triggers don't fire for writes made by scripts.</strong></p>
+
+      <p>That matters because the app writes to the database constantly. Every sign-up and cancellation appends or updates a row. If <code>onEdit</code> fired on those, it would be clearing caches hundreds of times a week, slowing down the app.</p>
+
+      <div class="note"><p>Curious how this whole app came about? Read <a href="/blog/mobile-friendly-kayak-web-app/">how I built a mobile-friendly web app in 20 hours</a>.</p></div>
+    </article>
+    </div>
+  </main>
+
+  <footer>© 2026 Anastasia Chechkova</footer>
+  <script src="/scripts.js"></script>
+</body>
+</html>
